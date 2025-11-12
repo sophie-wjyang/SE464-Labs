@@ -6,6 +6,7 @@ import logger from "../logger";
 
 export default class MySqlDB implements IDatabase {
     connection: mysql.Connection;
+    requestCount: number = 0;
 
     async init() {
         this.connection = await mysql.createConnection({
@@ -23,6 +24,8 @@ export default class MySqlDB implements IDatabase {
     }
 
     async queryProductById(productId) {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] queryProductById - Parameters: { productId: ${productId} }`);
         return (
             await this.connection.query(`SELECT *
                                 FROM products
@@ -31,6 +34,8 @@ export default class MySqlDB implements IDatabase {
     }
 
     async queryRandomProduct() {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] queryRandomProduct - Parameters: { }`);
         return (
             await this.connection.query(`SELECT *
                                 FROM products
@@ -40,6 +45,8 @@ export default class MySqlDB implements IDatabase {
     }
 
     queryAllProducts = async (category?: string) => {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] queryAllProducts - Parameters: { category: ${category} }`);
         if (category) {
             return (
                 await this.connection.query(`SELECT *
@@ -52,10 +59,14 @@ export default class MySqlDB implements IDatabase {
     };
 
     queryAllCategories = async () => {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] queryAllCategories - Parameters: { }`);
         return (await this.connection.query("SELECT * FROM categories;"))[0] as Category[];
     };
 
     queryAllOrders = async () => {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] queryAllOrders - Parameters: { }`);
         const orders = (await this.connection.query("SELECT * FROM orders;"))[0] as any[];
 
         // For each order, get its products
@@ -68,6 +79,8 @@ export default class MySqlDB implements IDatabase {
     };
 
     async queryOrdersByUser(id: string) {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] queryOrdersByUser - Parameters: { id: ${id} }`);
         const orders = (
             await this.connection.query(`SELECT *
                              FROM orders
@@ -84,6 +97,8 @@ export default class MySqlDB implements IDatabase {
     }
 
     queryOrderById = async (id: string) => {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] queryOrderById - Parameters: { id: ${id} }`);
         return (
             await this.connection.query(`SELECT *
                              FROM orders
@@ -92,6 +107,8 @@ export default class MySqlDB implements IDatabase {
     };
 
     queryUserById = async (id: string) => {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] queryUserById - Parameters: { id: ${id} }`);
         return (
             await this.connection.query(`SELECT id, email, name
                              FROM users
@@ -100,10 +117,14 @@ export default class MySqlDB implements IDatabase {
     };
 
     queryAllUsers = async () => {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] queryAllUsers - Parameters: { }`);
         return (await this.connection.query("SELECT id, name, email FROM users"))[0] as User[];
     };
 
     insertOrder = async (order: Order) => {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] insertOrder - Parameters: { order: ${JSON.stringify(order)} }`);
         // Insert into orders table
         await this.connection.query(`INSERT INTO orders (id, userId, totalAmount) VALUES (?, ?, ?)`, [order.id, order.userId, order.totalAmount]);
 
@@ -114,6 +135,8 @@ export default class MySqlDB implements IDatabase {
     };
 
     updateUser = async (patch: UserPatchRequest) => {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] updateUser - Parameters: { patch: ${JSON.stringify(patch)} }`);
         const updates: string[] = [];
         const values: any[] = [];
 
@@ -136,6 +159,8 @@ export default class MySqlDB implements IDatabase {
     // This is to delete the inserted order to avoid database data being contaminated also to make the data in database consistent with that in the json files so the comparison will return true.
     // Feel free to modify this based on your inserOrder implementation
     deleteOrder = async (id: string) => {
+        this.requestCount++;
+        logger.info(`[Request #${this.requestCount}] deleteOrder - Parameters: { id: ${id} }`);
         await this.connection.query(`DELETE FROM order_items WHERE orderId = ?`, [id]);
         await this.connection.query(`DELETE FROM orders WHERE id = ?`, [id]);
     };
