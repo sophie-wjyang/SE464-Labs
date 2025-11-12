@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 # Initialize DynamoDB client
-dynamodb = boto3.client('dynamodb', os.environ['AWS_REGION'])
+# dynamodb = boto3.client('dynamodb', os.environ['AWS_REGION'])
 
 
 
@@ -49,15 +49,15 @@ def delete_all_tables():
         cursor.close()
         connection.close()
 
-def delete_dynamodb_tables():
-    # List all tables
-    response = dynamodb.list_tables()
-    # Delete each table
-    for table_name in response['TableNames']:
-        dynamodb.delete_table(TableName=table_name)
-        print(f"Table {table_name} deleted.")
-    print("All tables deleted.")
+# def delete_dynamodb_tables():
+#     # List all tables
+#     response = dynamodb.list_tables()
+#     # Delete each table
+#     for table_name in response['TableNames']:
+#         dynamodb.delete_table(TableName=table_name)
+#         print(f"Table {table_name} deleted.")
+#     print("All tables deleted.")
 
 # Call the function to delete all tables
 delete_all_tables()
-delete_dynamodb_tables()
+# delete_dynamodb_tables()

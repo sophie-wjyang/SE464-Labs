@@ -16,6 +16,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const morgan_1 = __importDefault(require("morgan"));
 const body_parser_1 = __importDefault(require("body-parser"));
+const logger_1 = __importDefault(require("../logger"));
 class RestServer {
     constructor(db) {
         this.db = db;
@@ -112,7 +113,7 @@ class RestServer {
             }
         })); // Deletes an order by id
         this.server.listen(port, () => {
-            console.log(`REST server listening on port ${port}`);
+            logger_1.default.info(`REST server listening on port ${port}`, { port });
         });
     }
 }
