@@ -37,7 +37,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runTests = exports.avgRuntime = void 0;
 const restTests_1 = __importDefault(require("./tests/restTests"));
-const grpcTests_1 = __importDefault(require("./tests/grpcTests"));
 const perf_hooks_1 = require("perf_hooks");
 const _ = __importStar(require("lodash"));
 const runTest = (func, expected) => __awaiter(void 0, void 0, void 0, function* () {
@@ -45,13 +44,13 @@ const runTest = (func, expected) => __awaiter(void 0, void 0, void 0, function* 
     const result = yield func();
     const end = perf_hooks_1.performance.now();
     let pass = result === null || result === void 0 ? void 0 : result.ok;
-    // Function to compare arrays of objects by 'id'. 
+    // Function to compare arrays of objects by 'id'.
     function compareArraysById(arr1, arr2) {
         if (arr1.length !== arr2.length)
             return false;
         // Extract ids from both arrays
-        const ids1 = arr1.map(item => item.id).sort();
-        const ids2 = arr2.map(item => item.id).sort();
+        const ids1 = arr1.map((item) => item.id).sort();
+        const ids2 = arr2.map((item) => item.id).sort();
         // Compare the sorted arrays of ids
         return _.isEqual(ids1, ids2);
     }
@@ -60,7 +59,7 @@ const runTest = (func, expected) => __awaiter(void 0, void 0, void 0, function* 
             // Compare arrays of objects by 'id'
             pass = compareArraysById(result.payload, expected) && (result === null || result === void 0 ? void 0 : result.ok);
         }
-        else if (typeof expected === 'object' && typeof (result === null || result === void 0 ? void 0 : result.payload) === 'object') {
+        else if (typeof expected === "object" && typeof (result === null || result === void 0 ? void 0 : result.payload) === "object") {
             // Compare single objects by 'id'
             pass = expected.id === result.payload.id && (result === null || result === void 0 ? void 0 : result.ok);
         }
@@ -98,13 +97,13 @@ exports.avgRuntime = avgRuntime;
 function runTests(awsUrl, resultCache, iterations, ws) {
     return __awaiter(this, void 0, void 0, function* () {
         const restTestSuite = new restTests_1.default(awsUrl);
-        const grpcTestSuite = new grpcTests_1.default(awsUrl);
+        // const grpcTestSuite = new GrpcTestSuite(awsUrl);
         // Warmup
         yield restTestSuite.runSuite(1);
-        yield grpcTestSuite.runSuite(1);
+        // await grpcTestSuite.runSuite(1);
         resultCache[awsUrl] = {};
         resultCache[awsUrl]["rest"] = yield restTestSuite.runSuite(iterations);
-        resultCache[awsUrl]["grpc"] = yield grpcTestSuite.runSuite(iterations);
+        // resultCache[awsUrl]["grpc"] = await grpcTestSuite.runSuite(iterations);
         if (ws)
             ws.send(JSON.stringify(resultCache[awsUrl]));
     });
