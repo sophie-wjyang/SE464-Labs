@@ -1,0 +1,186 @@
+import logger from "../../src/logger";
+
+("use strict");
+var __awaiter =
+    (this && this.__awaiter) ||
+    function (thisArg, _arguments, P, generator) {
+        function adopt(value) {
+            return value instanceof P
+                ? value
+                : new P(function (resolve) {
+                      resolve(value);
+                  });
+        }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) {
+                try {
+                    step(generator.next(value));
+                } catch (e) {
+                    reject(e);
+                }
+            }
+            function rejected(value) {
+                try {
+                    step(generator["throw"](value));
+                } catch (e) {
+                    reject(e);
+                }
+            }
+            function step(result) {
+                result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+            }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+var __importDefault =
+    (this && this.__importDefault) ||
+    function (mod) {
+        return mod && mod.__esModule ? mod : { default: mod };
+    };
+Object.defineProperty(exports, "__esModule", { value: true });
+const promise_1 = __importDefault(require("mysql2/promise"));
+class MySqlDB {
+    init() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.connection = yield promise_1.default.createConnection({
+                host: process.env.RDS_HOSTNAME,
+                user: process.env.RDS_USERNAME,
+                password: process.env.RDS_PASSWORD,
+                port: parseInt(process.env.RDS_PORT), // Convert port to a number
+                database: process.env.RDS_DATABASE,
+            });
+            console.log("MySQL connected!");
+        });
+    }
+    constructor() {
+        this.requestCount = 0;
+        this.queryAllProducts = (category) =>
+            __awaiter(this, void 0, void 0, function* () {
+                this.requestCount++;
+                logger.info(`[Request #${this.requestCount}] queryAllProducts - Parameters: { category: ${category} }`);
+                if (category) {
+                    return (yield this.connection.query(`SELECT *
+                                  FROM products
+                                  WHERE categoryId = "${category}";`))[0];
+                } else {
+                    return (yield this.connection.query("SELECT * FROM products;"))[0];
+                }
+            });
+        this.queryAllCategories = () =>
+            __awaiter(this, void 0, void 0, function* () {
+                this.requestCount++;
+                logger.info(`[Request #${this.requestCount}] queryAllCategories - Parameters: { }`);
+                return (yield this.connection.query("SELECT * FROM categories;"))[0];
+            });
+        this.queryAllOrders = () =>
+            __awaiter(this, void 0, void 0, function* () {
+                this.requestCount++;
+                logger.info(`[Request #${this.requestCount}] queryAllOrders - Parameters: { }`);
+                const orders = (yield this.connection.query("SELECT * FROM orders;"))[0];
+                // For each order, get its products
+                for (let order of orders) {
+                    const orderItems = (yield this.connection.query(`SELECT productId, quantity FROM order_items WHERE orderId = "${order.id}";`))[0];
+                    order.products = orderItems;
+                }
+                return orders;
+            });
+        this.queryOrderById = (id) =>
+            __awaiter(this, void 0, void 0, function* () {
+                this.requestCount++;
+                logger.info(`[Request #${this.requestCount}] queryOrderById - Parameters: { id: ${id} }`);
+                return (yield this.connection.query(`SELECT *
+                             FROM orders
+                             WHERE id = "${id}"`))[0][0];
+            });
+        this.queryUserById = (id) =>
+            __awaiter(this, void 0, void 0, function* () {
+                this.requestCount++;
+                logger.info(`[Request #${this.requestCount}] queryUserById - Parameters: { id: ${id} }`);
+                return (yield this.connection.query(`SELECT id, email, name
+                             FROM users
+                             WHERE id = "${id}";`))[0][0];
+            });
+        this.queryAllUsers = () =>
+            __awaiter(this, void 0, void 0, function* () {
+                this.requestCount++;
+                logger.info(`[Request #${this.requestCount}] queryAllUsers - Parameters: { }`);
+                return (yield this.connection.query("SELECT id, name, email FROM users"))[0];
+            });
+        this.insertOrder = (order) =>
+            __awaiter(this, void 0, void 0, function* () {
+                this.requestCount++;
+                logger.info(`[Request #${this.requestCount}] insertOrder - Parameters: { order: ${JSON.stringify(order)} }`);
+                // Insert into orders table
+                yield this.connection.query(`INSERT INTO orders (id, userId, totalAmount) VALUES (?, ?, ?)`, [order.id, order.userId, order.totalAmount]);
+                // Insert into order_items table
+                for (let product of order.products) {
+                    yield this.connection.query(`INSERT INTO order_items (orderId, productId, quantity) VALUES (?, ?, ?)`, [order.id, product.productId, product.quantity]);
+                }
+            });
+        this.updateUser = (patch) =>
+            __awaiter(this, void 0, void 0, function* () {
+                this.requestCount++;
+                logger.info(`[Request #${this.requestCount}] updateUser - Parameters: { patch: ${JSON.stringify(patch)} }`);
+                const updates = [];
+                const values = [];
+                if (patch.email !== undefined) {
+                    updates.push("email = ?");
+                    values.push(patch.email);
+                }
+                if (patch.password !== undefined) {
+                    updates.push("password = ?");
+                    values.push(patch.password);
+                }
+                if (updates.length > 0) {
+                    values.push(patch.id);
+                    yield this.connection.query(`UPDATE users SET ${updates.join(", ")} WHERE id = ?`, values);
+                }
+            });
+        // This is to delete the inserted order to avoid database data being contaminated also to make the data in database consistent with that in the json files so the comparison will return true.
+        // Feel free to modify this based on your inserOrder implementation
+        this.deleteOrder = (id) =>
+            __awaiter(this, void 0, void 0, function* () {
+                this.requestCount++;
+                logger.info(`[Request #${this.requestCount}] deleteOrder - Parameters: { id: ${id} }`);
+                yield this.connection.query(`DELETE FROM order_items WHERE orderId = ?`, [id]);
+                yield this.connection.query(`DELETE FROM orders WHERE id = ?`, [id]);
+            });
+        this.init();
+    }
+    queryProductById(productId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.requestCount++;
+            logger.info(`[Request #${this.requestCount}] queryProductById - Parameters: { productId: ${productId} }`);
+            return (yield this.connection.query(`SELECT *
+                                FROM products
+                                WHERE id = "${productId}";`))[0][0];
+        });
+    }
+    queryRandomProduct() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.requestCount++;
+            logger.info(`[Request #${this.requestCount}] queryRandomProduct - Parameters: { }`);
+            return (yield this.connection.query(`SELECT *
+                                FROM products
+                                ORDER BY RAND()
+                                LIMIT 1;`))[0][0];
+        });
+    }
+    queryOrdersByUser(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.requestCount++;
+            logger.info(`[Request #${this.requestCount}] queryOrdersByUser - Parameters: { id: ${id} }`);
+            const orders = (yield this.connection.query(`SELECT *
+                             FROM orders
+                             WHERE userId = "${id}";`))[0];
+            // For each order, get its products
+            for (let order of orders) {
+                const orderItems = (yield this.connection.query(`SELECT productId, quantity FROM order_items WHERE orderId = "${order.id}";`))[0];
+                order.products = orderItems;
+            }
+            return orders;
+        });
+    }
+}
+exports.default = MySqlDB;
+//# sourceMappingURL=mysql_db.js.map
