@@ -17,7 +17,7 @@ const logger = winston_1.default.createLogger({
         new winston_cloudwatch_1.default({
             logGroupName: 'server-logs',
             logStreamName: 'server-logs',
-            awsRegion: 'us-east-1', // Shouldn't have to replace this
+            awsRegion: 'us-east-2', // Shouldn't have to replace this
             jsonMessage: true, // Ensure logs are formatted as JSON
         }),
     ],

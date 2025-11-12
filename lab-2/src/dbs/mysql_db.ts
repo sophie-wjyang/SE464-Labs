@@ -3,6 +3,7 @@ import { IDatabase } from "../interfaces";
 import { Category, Order, User, UserPatchRequest } from "../types";
 import mysql from "mysql2/promise";
 import logger from "../logger";
+import { uuid } from "uuidv4";
 
 export default class MySqlDB implements IDatabase {
     connection: mysql.Connection;
@@ -130,7 +131,8 @@ export default class MySqlDB implements IDatabase {
 
         // Insert into order_items table
         for (let product of order.products) {
-            await this.connection.query(`INSERT INTO order_items (orderId, productId, quantity) VALUES (?, ?, ?)`, [order.id, product.productId, product.quantity]);
+            const orderItemId = uuid(); // Generate a unique ID for each order item
+            await this.connection.query(`INSERT INTO order_items (id, orderId, productId, quantity) VALUES (?, ?, ?, ?)`, [orderItemId, order.id, product.productId, product.quantity]);
         }
     };
 
